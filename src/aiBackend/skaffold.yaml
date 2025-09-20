@@ -1,0 +1,38 @@
+apiVersion: skaffold/v4beta7
+kind: Config
+metadata:
+  name: aibackend
+build:
+  artifacts:
+  - image: aibackend
+    context: .
+    docker:
+      dockerfile: Dockerfile
+  googleCloudBuild:
+    projectId: PROJECT_ID
+deploy:
+  kubectl:
+    manifests:
+      - k8s/aibackend.yaml
+profiles:
+- name: dev
+  deploy:
+    kubectl:
+      manifests:
+        - k8s/aibackend.yaml
+- name: staging
+  build:
+    googleCloudBuild:
+      projectId: PROJECT_ID
+  deploy:
+    kubectl:
+      manifests:
+        - k8s/aibackend.yaml
+- name: prod
+  build:
+    googleCloudBuild:
+      projectId: PROJECT_ID
+  deploy:
+    kubectl:
+      manifests:
+        - k8s/aibackend.yaml

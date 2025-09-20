@@ -1,0 +1,39 @@
+steps:
+  # Build the container image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: [
+      'build', 
+      '-t', 'gcr.io/$PROJECT_ID/aibackend:$COMMIT_SHA',
+      '-t', 'gcr.io/$PROJECT_ID/aibackend:latest',
+      '.'
+    ]
+    dir: 'src/aiBackend'
+
+  # Push the container image to Container Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/aibackend:$COMMIT_SHA']
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/aibackend:latest']
+
+  # Deploy container image to GKE
+  - name: 'gcr.io/cloud-builders/gke-deploy'
+    args:
+      - 'run'
+      - '--filename=k8s/aibackend.yaml'
+      - '--cluster=${_GKE_CLUSTER}'
+      - '--location=${_GKE_ZONE}'
+      - '--namespace=${_GKE_NAMESPACE}'
+    dir: 'src/aiBackend'
+    env:
+      - 'CLOUDSDK_COMPUTE_ZONE=${_GKE_ZONE}'
+      - 'CLOUDSDK_CONTAINER_CLUSTER=${_GKE_CLUSTER}'
+
+substitutions:
+  _GKE_CLUSTER: 'bank-of-anthos'
+  _GKE_ZONE: 'us-central1-a'
+  _GKE_NAMESPACE: 'default'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+  machineType: 'E2_HIGHCPU_8'
